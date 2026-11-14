@@ -1,0 +1,11 @@
+{
+  "name": "مسدار",
+  "short_name": "مسدار",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#EFEBE1",
+  "theme_color": "#2F3B25",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
