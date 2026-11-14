@@ -498,6 +498,25 @@ revoke execute on function settle_loyalty(uuid) from public, anon, authenticated
 revoke execute on function session_customer(uuid) from public, anon, authenticated;
 grant execute on function confirm_payment(uuid, text, int) to service_role;
 
+-- صلاحيات صريحة لأدوار واجهة البيانات، حتى لا يعتمد الملف على افتراضات المشروع
+grant usage on schema public to anon, authenticated, service_role;
+grant select on categories, option_groups, items, settings to anon, authenticated;
+grant insert, update, delete on categories, option_groups, items, settings to authenticated;
+grant select, update on private_settings to authenticated;
+grant select on orders, waiter_calls, staff to authenticated;
+grant execute on function is_staff() to anon, authenticated;
+grant execute on function login_with_phone(text, text) to anon, authenticated;
+grant execute on function customer_me(uuid) to anon, authenticated;
+grant execute on function place_order(uuid, jsonb) to anon, authenticated;
+grant execute on function get_order(uuid, uuid) to anon, authenticated, service_role;
+grant execute on function my_orders(uuid) to anon, authenticated;
+grant execute on function mark_arrived(uuid, uuid, int) to anon, authenticated;
+grant execute on function call_waiter(int) to anon, authenticated;
+grant execute on function staff_set_order_status(uuid, text) to authenticated;
+grant execute on function staff_mark_paid(uuid) to authenticated;
+grant execute on function staff_resolve_call(uuid) to authenticated;
+grant execute on function staff_orders() to authenticated;
+
 -- التحديث اللحظي للوحة الطلبات
 do $$ begin
   if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then

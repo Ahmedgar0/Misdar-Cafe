@@ -146,6 +146,24 @@ describe('schema.sql', () => {
     await expect(rpc('place_order', '00000000-0000-0000-0000-000000000000', input({ lines: [line('لاتيه')] }))).rejects.toThrow('AUTH');
   });
 
+  it('دور الزائر: يقرأ القائمة ويستدعي الدوال، ولا يصل لجداول العملاء', async () => {
+    await db.exec('set role anon');
+    try {
+      const r = await db.query<{ n: number }>('select count(*)::int n from items');
+      expect(r.rows[0].n).toBe(15);
+      const s = await rpc('login_with_phone', '0500000099', '1234');
+      const o = await rpc('place_order', s.token, input({ lines: [line('لاتيه')] }));
+      expect(Number(o.total)).toBe(7);
+      await expect(db.query('select * from customers')).rejects.toThrow(/permission denied/);
+      await expect(db.query('select * from sessions')).rejects.toThrow(/permission denied/);
+      await expect(db.query('select * from private_settings')).rejects.toThrow(/permission denied/);
+      await expect(db.query("insert into items (category_id, name) select id, 'x' from categories limit 1")).rejects.toThrow(/permission denied/);
+      await expect(rpc('confirm_payment', o.id, 'pay_x', 700)).rejects.toThrow(/permission denied/);
+    } finally {
+      await db.exec('reset role');
+    }
+  });
+
   it('نداء النادل لا يتكرر للطاولة نفسها', async () => {
     await rpc('call_waiter', 4);
     await rpc('call_waiter', 4);

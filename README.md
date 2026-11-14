@@ -28,7 +28,7 @@ npm run build
    ```sql
    insert into staff (user_id) values ('معرّف-المستخدم-من-صفحة-Users');
    ```
-4. من Project Settings › API انسخ `Project URL` و `anon key` و `service_role key`.
+4. من Settings › API Keys انسخ رابط المشروع والمفتاح العام `sb_publishable_...` والمفتاح السري `sb_secret_...`. (المفتاحان القديمان anon و service_role يعملان أيضاً، لكن Supabase ستوقفهما.)
 
 ### 2. ميسر (وضع الاختبار)
 
@@ -41,12 +41,12 @@ npm run build
 | المتغير | القيمة |
 | --- | --- |
 | `VITE_SUPABASE_URL` | رابط المشروع |
-| `VITE_SUPABASE_ANON_KEY` | مفتاح anon |
+| `VITE_SUPABASE_ANON_KEY` | المفتاح العام `sb_publishable_...` |
 | `VITE_MOYASAR_PUBLISHABLE_KEY` | `pk_test_...` |
 | `VITE_MOYASAR_METHODS` | `creditcard` (وأضف `stcpay` أو `applepay` بعد تفعيلهما في ميسر) |
 | `VITE_SHOW_TEST_OTP` | `1` لإظهار تلميح رمز الاختبار في صفحة الدخول |
 | `SUPABASE_URL` | رابط المشروع نفسه |
-| `SUPABASE_SERVICE_ROLE_KEY` | مفتاح service_role (سري) |
+| `SUPABASE_SERVICE_ROLE_KEY` | المفتاح السري `sb_secret_...` |
 | `MOYASAR_SECRET_KEY` | `sk_test_...` (سري) |
 
 المتغيرات التي لا تبدأ بـ `VITE_` تبقى في الخادم ولا تصل المتصفح.
