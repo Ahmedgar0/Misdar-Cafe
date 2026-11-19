@@ -1,18 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { buildOrder } from './api.local';
 import {
   computeTotals, initialStatus, loyaltyAfterCancel, loyaltyAfterPayment, loyaltyAfterPlacement,
   needsArrival, normalizePhone, statusAfterOnlinePayment,
 } from './pricing';
 import { seedMenu } from './seed';
-import type { OrderInput, Service } from './types';
+import type { Service } from './types';
 
 const menu = seedMenu();
 const s = menu.settings;
 const table4: Service = { type: 'dinein', table: 4, tableSource: 'qr', later: false, pickup: 'now' };
 const remote: Service = { type: 'takeaway', table: null, tableSource: null, later: false, pickup: 'now' };
-const line = (itemId: string, sizeIndex = 0, extra = {}) => ({ itemId, sizeIndex, temp: null, choices: [], note: '', qty: 1, ...extra });
-const input = (over: Partial<OrderInput>): OrderInput => ({ lines: [], service: table4, payMethod: 'cashier', usePoints: false, freeCup: null, ...over });
 
 describe('الهاتف', () => {
   it('يوحّد الصيغ', () => {
@@ -71,36 +68,5 @@ describe('حالات الطلب', () => {
   it('محلي من الخارج ينتظر الوصول حتى مع الدفع الإلكتروني', () => {
     const later: Service = { type: 'dinein', table: null, tableSource: null, later: true, pickup: 'now' };
     expect(statusAfterOnlinePayment(later)).toBe('waiting_arrival');
-  });
-});
-
-describe('بناء الطلب', () => {
-  const l0 = { stamps: 0, points: 0 };
-  it('يسعّر من القائمة لا من العميل', () => {
-    const o = buildOrder(menu, l0, input({ lines: [line('i-cappuccino', 1), line('i-luqaimat', 1)] }), '+966500000000', 1001);
-    expect(o.total).toBe(19);
-    expect(o.lines[0]).toMatchObject({ name: 'كابتشينو', sizeLabel: 'كبير', unitPrice: 9 });
-  });
-  it('يرفض المحلي بلا طاولة، والحجم بلا سعر، والبارد دون اختيار', () => {
-    const noTable: Service = { type: 'dinein', table: null, tableSource: null, later: false, pickup: 'now' };
-    expect(() => buildOrder(menu, l0, input({ service: noTable, lines: [line('i-latte')] }), 'p', 1)).toThrow('TABLE_REQUIRED');
-    expect(() => buildOrder(menu, l0, input({ lines: [line('i-jebena', 2)] }), 'p', 1)).toThrow('SIZE');
-    expect(() => buildOrder(menu, l0, input({ lines: [line('i-cod')] }), 'p', 1)).toThrow('TEMP');
-  });
-  it('الثلج يظهر مع البارد فقط، ووصف القهوة يُحفظ', () => {
-    const hot = buildOrder(menu, l0, input({ lines: [line('i-cod', 0, { temp: 'hot', choices: [{ groupId: 'g-ice', optionIndexes: [1] }] })] }), 'p', 1);
-    expect(hot.lines[0].choices).toEqual([]);
-    const cold = buildOrder(menu, l0, input({ lines: [line('i-cod', 0, { temp: 'cold', choices: [{ groupId: 'g-ice', optionIndexes: [1] }] })] }), 'p', 1);
-    expect(cold.lines[0].choices[0].labels).toEqual(['ثلج قليل']);
-    const j = buildOrder(menu, l0, input({ lines: [line('i-jebena', 0, { note: 'زنجبيل زيادة' })] }), 'p', 1);
-    expect(j.lines[0].note).toBe('زنجبيل زيادة');
-  });
-  it('الكوب المجاني يحتاج 3 أختام وصنفاً مشمولاً', () => {
-    expect(() => buildOrder(menu, { stamps: 2, points: 0 }, input({ freeCup: { itemId: 'i-jebena', temp: null } }), 'p', 1)).toThrow('FREE_NOT_READY');
-    expect(() => buildOrder(menu, { stamps: 3, points: 0 }, input({ freeCup: { itemId: 'i-latte', temp: null } }), 'p', 1)).toThrow('FREE_ITEM');
-    const o = buildOrder(menu, { stamps: 3, points: 0 }, input({ freeCup: { itemId: 'i-cod', temp: 'cold' } }), 'p', 1);
-    expect(o.freeCup).toEqual({ name: 'قهوة اليوم', temp: 'cold' });
-    expect(o.total).toBe(0);
-    expect(o.status).toBe('new');
   });
 });

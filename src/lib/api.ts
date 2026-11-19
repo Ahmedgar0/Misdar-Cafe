@@ -1,49 +1,73 @@
-import type {
-  Category, Item, LedgerEntry, Loyalty, Menu, OptionGroup, Order, OrderInput, OrderStatus, Session, Settings, WaiterCall,
-} from './types';
-import { createLocalApi } from './api.local';
-import { createSupabaseApi } from './api.supabase';
+// طبقة البيانات: كل العمليات دوال في قاعدة البيانات (RPC) تُستدعى بالطريقة نفسها في الإنتاج والوضع التجريبي.
+// الإنتاج: Supabase. الوضع التجريبي: قاعدة Postgres نفسها (PGlite) داخل المتصفح بالملفين ذاتهما.
+import { OrderError } from './pricing';
+import type { LedgerEntry, Loyalty, Menu, Order, OrderInput, Invoice, Session, StaffMe } from './types';
 
-export interface Api {
-  /** demo = بيانات محفوظة في المتصفح فقط، بلا خادم */
+export interface Transport {
   mode: 'demo' | 'supabase';
-
-  getMenu(): Promise<Menu>;
-
-  // العميل
-  login(phone: string, code: string): Promise<Session>;
-  me(token: string): Promise<{ loyalty: Loyalty; history: LedgerEntry[] }>;
-  placeOrder(token: string, input: OrderInput): Promise<Order>;
-  getOrder(token: string, id: string): Promise<Order>;
-  myOrders(token: string): Promise<Order[]>;
-  markArrived(token: string, id: string, table: number | null): Promise<Order>;
-  confirmPayment(token: string, orderId: string, paymentId: string): Promise<Order>;
-  callWaiter(table: number): Promise<void>;
-
-  // الموظفون
-  staffSignedIn(): Promise<boolean>;
-  staffLogin(email: string, password: string): Promise<void>;
+  rpc<T>(fn: string, args: Record<string, unknown>, asStaff: boolean): Promise<T>;
+  staffSession(): Promise<StaffMe | null>;
+  staffLogin(email: string, password: string): Promise<StaffMe>;
   staffLogout(): Promise<void>;
-  saveCategory(c: Category): Promise<void>;
-  deleteCategory(id: string): Promise<void>;
-  saveGroup(g: OptionGroup): Promise<void>;
-  deleteGroup(id: string): Promise<void>;
-  saveItem(i: Item): Promise<void>;
-  deleteItem(id: string): Promise<void>;
-  saveSettings(s: Settings): Promise<void>;
-  listOrders(): Promise<Order[]>;
-  setOrderStatus(id: string, status: OrderStatus): Promise<void>;
-  markOrderPaid(id: string): Promise<void>;
-  listWaiterCalls(): Promise<WaiterCall[]>;
-  resolveWaiterCall(id: string): Promise<void>;
-  /** يستدعي cb عند تغير الطلبات أو النداءات. يعيد دالة الإلغاء */
-  subscribeStaff(cb: () => void): () => void;
+  /** دالة خادم (Netlify) بجلسة الموظف */
+  fn<T>(name: string, body: object): Promise<T>;
+  confirmPayment(token: string, orderId: string, paymentId: string): Promise<Order>;
+  subscribe(cb: () => void): () => void;
+  /** حسابات الدخول التجريبية (الوضع التجريبي فقط) */
+  demoAccounts?: { email: string; name: string; role: string }[];
 }
 
+let transport: Promise<Transport> | null = null;
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+export const mode: 'demo' | 'supabase' = url && key ? 'supabase' : 'demo';
 
-export const api: Api = url && key ? createSupabaseApi(url, key) : createLocalApi();
+function t(): Promise<Transport> {
+  if (!transport) {
+    transport = mode === 'supabase'
+      ? import('./api.supabase').then((m) => m.createSupabaseTransport(url!, key!))
+      : import('./api.demo').then((m) => m.createDemoTransport());
+  }
+  return transport;
+}
+
+const anon = async <T>(fn: string, args: Record<string, unknown> = {}) => (await t()).rpc<T>(fn, args, false);
+
+export const api = {
+  mode,
+  ready: () => t(),
+
+  // ─── العميل ───
+  getMenu: () => anon<Menu>('get_menu'),
+  login: (phone: string, code: string) => anon<Session>('login_with_phone', { p_phone: phone, p_code: code }),
+  me: (token: string) => anon<{ loyalty: Loyalty; history: LedgerEntry[] }>('customer_me', { p_token: token }),
+  placeOrder: (token: string, input: OrderInput) => anon<Order>('place_order', { p_token: token, p_input: input }),
+  getOrder: (token: string, id: string) => anon<Order>('get_order', { p_token: token, p_id: id }),
+  myOrders: (token: string) => anon<Order[]>('my_orders', { p_token: token }),
+  markArrived: (token: string, id: string, table: number | null) => anon<Order>('mark_arrived', { p_token: token, p_id: id, p_table: table }),
+  callWaiter: (table: number) => anon<void>('call_waiter', { p_table: table }),
+  getInvoice: (id: string) => anon<Invoice | null>('get_invoice', { p_id: id }),
+  confirmPayment: async (token: string, orderId: string, paymentId: string) => (await t()).confirmPayment(token, orderId, paymentId),
+
+  // ─── الموظفون ───
+  staff: {
+    session: async () => (await t()).staffSession(),
+    login: async (email: string, password: string) => (await t()).staffLogin(email, password),
+    logout: async () => (await t()).staffLogout(),
+    rpc: async <T>(fn: string, args: Record<string, unknown> = {}) => (await t()).rpc<T>(fn, args, true),
+    fn: async <T>(name: string, body: object) => (await t()).fn<T>(name, body),
+    subscribe: (cb: () => void) => {
+      let off: (() => void) | null = null;
+      let dead = false;
+      void t().then((x) => { if (!dead) off = x.subscribe(cb); });
+      return () => { dead = true; off?.(); };
+    },
+  },
+};
+
+export function demoOnly(): never {
+  throw new OrderError('DEMO_ONLY');
+}
 
 export const newId = (): string =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto

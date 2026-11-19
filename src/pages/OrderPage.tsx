@@ -142,6 +142,7 @@ export function OrderPage() {
           {order.discount > 0 ? <div className="row mute"><span>خصم النقاط</span><span className="num">− {sar(order.discount)}</span></div> : null}
           <div className="row total"><span>الإجمالي</span><span className="num">{sar(order.total)}</span></div>
           <div className="row mute"><span>الدفع</span><span>{order.paymentStatus === 'paid' ? 'مدفوع' : order.payMethod === 'cashier' ? 'عند الكاشير' : 'بانتظار الدفع'}</span></div>
+          {order.invoiceId ? <Link className="small" to={'/invoice/' + order.invoiceId} style={{ color: 'var(--olive)', textDecoration: 'underline' }}>عرض الفاتورة</Link> : null}
           {earned.length > 0 ? (
             <div className="hint">
               {order.loyaltySettled ? 'أُضيف إلى رصيدك: ' : 'يُضاف إلى رصيدك بعد الدفع: '}{earned.join('، ')}

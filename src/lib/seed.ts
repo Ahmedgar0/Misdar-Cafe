@@ -1,4 +1,4 @@
-// القائمة الأولية للوضع التجريبي. نفس البيانات مزروعة في supabase/schema.sql.
+// القائمة الأولية لاختبارات الوحدة. البيانات الفعلية تُزرع من supabase/schema.sql.
 import type { Menu, Size } from './types';
 
 const sz = (...pairs: [string, number | null][]): Size[] => pairs.map(([label, price]) => ({ label, price }));
@@ -13,7 +13,11 @@ export function seedMenu(): Menu {
     ({ ...base, ...extra, id, categoryId, name, sizes, sort: n++ });
 
   return {
-    settings: { stampMin: 6, stampsForFree: 3, pointsPerRiyal: 1, pointsPerRiyalDiscount: 20, deliveryEnabled: false },
+    settings: {
+      stampMin: 6, stampsForFree: 3, pointsPerRiyal: 1, pointsPerRiyalDiscount: 20, deliveryEnabled: false,
+      storeName: 'مسدار', legalName: '', crNumber: '', vatNumber: '', vatEnabled: false, vatRate: 15,
+      address: { street: '', building: '', district: '', city: 'الرياض', postal: '' }, phone: '', receiptFooter: '', invoicePrefix: 'INV-',
+    },
     categories: [
       { id: sudani, name: 'القهوة السودانية والشاي', sort: 0, visible: true },
       { id: coffee, name: 'القهوة', sort: 1, visible: true },

@@ -1,10 +1,11 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { Admin } from './admin/Admin';
+import { AdminApp } from './admin/AdminApp';
 import { Shell } from './components/Shell';
 import { Cart } from './pages/Cart';
 import { Home } from './pages/Home';
+import { InvoicePage } from './pages/InvoicePage';
 import { Login } from './pages/Login';
 import { MenuPage } from './pages/MenuPage';
 import { OrderPage } from './pages/OrderPage';
@@ -19,7 +20,8 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <AppProvider>
         <Routes>
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/*" element={<AdminApp />} />
+          <Route path="/invoice/:id" element={<InvoicePage />} />
           <Route element={<Shell />}>
             <Route path="/" element={<Home />} />
             <Route path="/t/:n" element={<TableEntry />} />

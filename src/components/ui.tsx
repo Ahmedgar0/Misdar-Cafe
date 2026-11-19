@@ -17,7 +17,8 @@ export function Waves({ stroke = '#475636', className = 'waves' }: { stroke?: st
   );
 }
 
-type IconName = 'home' | 'cup' | 'star' | 'bag' | 'plus' | 'close' | 'pin' | 'bell' | 'bean' | 'hot' | 'cold' | 'back';
+type IconName = 'home' | 'cup' | 'star' | 'bag' | 'plus' | 'close' | 'pin' | 'bell' | 'bean' | 'hot' | 'cold' | 'back'
+  | 'chart' | 'receipt' | 'users' | 'box' | 'gear' | 'clock' | 'pos' | 'list' | 'shield' | 'menu' | 'print' | 'grid';
 const PATHS: Record<IconName, ReactNode> = {
   home: <path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1v-8z" />,
   cup: <path d="M5 9h11v6a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V9zM16 10h1.5a2.5 2.5 0 0 1 0 5H16M8 3v3M12 3v3" />,
@@ -31,6 +32,18 @@ const PATHS: Record<IconName, ReactNode> = {
   hot: <path d="M5 11h11v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-5zM16 12h1.5a2.5 2.5 0 0 1 0 5H16M8 3c-1 1.5 1 2.5 0 4M12 3c-1 1.5 1 2.5 0 4" />,
   cold: <path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9M9.5 4.5L12 7l2.5-2.5M9.5 19.5L12 17l2.5 2.5" />,
   back: <path d="M19 12H5M11 6l-6 6 6 6" />,
+  chart: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
+  receipt: <path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3zM9 8h6M9 12h6M9 16h4" />,
+  users: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6 6 0 0 1 3.5 5.5" /></>,
+  box: <path d="M3 7.5L12 3l9 4.5v9L12 21l-9-4.5v-9zM3 7.5l9 4.5 9-4.5M12 12v9" />,
+  gear: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" /></>,
+  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+  pos: <path d="M3 5h18v10H3zM7 19h10M12 15v4M7 9h4" />,
+  list: <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />,
+  shield: <path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3zM9 12l2 2 4-4" />,
+  menu: <path d="M4 7h16M4 12h16M4 17h16" />,
+  print: <path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z" />,
+  grid: <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" />,
 };
 
 export function Icon({ name, size = 22 }: { name: IconName; size?: number }) {

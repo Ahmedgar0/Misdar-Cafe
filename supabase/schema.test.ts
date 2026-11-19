@@ -21,9 +21,12 @@ beforeAll(async () => {
     create schema auth;
     create function auth.uid() returns uuid language sql stable as
       $$ select nullif(current_setting('test.uid', true), '')::uuid $$;
+    create table auth.users (id uuid primary key, email text);
+    insert into auth.users values ('00000000-0000-0000-0000-000000000001', 'owner@misdar.test');
   `);
   await db.exec(readFileSync(new URL('./schema.sql', import.meta.url), 'utf8'));
   await db.exec(`insert into staff values ('00000000-0000-0000-0000-000000000001')`);
+  await db.exec(readFileSync(new URL('./002_admin_pos.sql', import.meta.url), 'utf8'));
   const items = await db.query<{ id: string; name: string }>('select id, name from items');
   for (const r of items.rows) ids[r.name] = r.id;
   const groups = await db.query<{ id: string; name: string }>('select id, name from option_groups');
@@ -60,6 +63,8 @@ describe('schema.sql', () => {
     expect(o.status).toBe('new');
     expect(await loyalty(t)).toEqual({ stamps: 0, points: 0 });
     await asStaff(true);
+    await expect(rpc('staff_set_order_status', o.id, 'done')).rejects.toThrow('UNPAID');
+    await rpc('staff_mark_paid', o.id, 'card');
     await rpc('staff_set_order_status', o.id, 'done');
     await asStaff(false);
     expect(await loyalty(t)).toEqual({ stamps: 1, points: 19 });
@@ -69,7 +74,7 @@ describe('schema.sql', () => {
     const t = await login('0500000002');
     const o = await rpc('place_order', t, input({ lines: [line('إسبريسو')] }));
     await asStaff(true);
-    await rpc('staff_mark_paid', o.id);
+    await rpc('staff_mark_paid', o.id, 'card');
     await asStaff(false);
     expect(await loyalty(t)).toEqual({ stamps: 0, points: 4 });
   });
@@ -79,7 +84,7 @@ describe('schema.sql', () => {
     await asStaff(true);
     for (let i = 0; i < 3; i++) {
       const o = await rpc('place_order', t, input({ lines: [line('لاتيه', 1)] }));
-      await rpc('staff_mark_paid', o.id);
+      await rpc('staff_mark_paid', o.id, 'card');
     }
     expect(await loyalty(t)).toEqual({ stamps: 3, points: 27 });
     await expect(rpc('place_order', t, input({ freeCup: { itemId: ids['لاتيه'], temp: null } }))).rejects.toThrow('FREE_ITEM');
@@ -89,7 +94,7 @@ describe('schema.sql', () => {
     await rpc('staff_set_order_status', free.id, 'cancelled');
     expect(await loyalty(t)).toEqual({ stamps: 3, points: 27 });
     const again = await rpc('place_order', t, input({ lines: [line('لاتيه', 1)], freeCup: { itemId: ids['قهوة سودانية'], temp: null } }));
-    await rpc('staff_mark_paid', again.id);
+    await rpc('staff_mark_paid', again.id, 'card');
     await asStaff(false);
     expect(await loyalty(t)).toEqual({ stamps: 0, points: 36 });
   });

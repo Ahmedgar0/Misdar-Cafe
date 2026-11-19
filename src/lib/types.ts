@@ -45,6 +45,8 @@ export interface Item {
   sort: number;
 }
 
+export interface Address { street: string; building: string; district: string; city: string; postal: string; additional?: string }
+
 export interface Settings {
   stampMin: number;
   stampsForFree: number;
@@ -52,6 +54,16 @@ export interface Settings {
   /** عدد النقاط التي تخصم ريالاً واحداً */
   pointsPerRiyalDiscount: number;
   deliveryEnabled: boolean;
+  storeName: string;
+  legalName: string;
+  crNumber: string;
+  vatNumber: string;
+  vatEnabled: boolean;
+  vatRate: number;
+  address: Address;
+  phone: string;
+  receiptFooter: string;
+  invoicePrefix: string;
 }
 
 export interface Menu {
@@ -110,7 +122,8 @@ export type OrderStatus =
   | 'preparing'
   | 'ready'
   | 'done'
-  | 'cancelled';
+  | 'cancelled'
+  | 'refunded';
 
 export interface OrderLine {
   itemId: string;
@@ -143,8 +156,73 @@ export interface Order {
   pointsEarned: number;
   qualifies: boolean;
   loyaltySettled: boolean;
-  customerPhone: string;
+  customerPhone: string | null;
   createdAt: string;
+  channel: 'online' | 'pos';
+  manualDiscount: number;
+  discountReason: string;
+  createdBy: string | null;
+  invoiceId: string | null;
+  payments: { method: PayKind; kind: 'sale' | 'refund'; amount: number }[];
+}
+
+export type PayKind = 'cash' | 'card' | 'online';
+export type Role = 'owner' | 'manager' | 'cashier' | 'barista';
+
+export interface StaffMe { userId: string; name: string; email: string; role: Role }
+
+export interface InvoiceLine { name: string; qty: number; unitIncl: number; incl: number; ex: number; vat: number }
+
+export type ZatcaStatus = 'not_applicable' | 'pending' | 'signed' | 'reported' | 'warning' | 'rejected';
+
+export interface Invoice {
+  id: string;
+  number: string;
+  kind: 'invoice' | 'credit_note';
+  refNumber: string | null;
+  reason: string;
+  issuedAt: string;
+  buyerPhone: string | null;
+  vatEnabled: boolean;
+  vatRate: number;
+  seller: { name: string; storeName: string; vatNumber: string; crNumber: string; address: Address; phone: string; footer: string };
+  lines: InvoiceLine[];
+  discountIncl: number;
+  discountEx: number;
+  totalEx: number;
+  vatAmount: number;
+  rounding: number;
+  total: number;
+  payments: { method: PayKind; amount: number }[];
+  orderNumber: string;
+  serviceType: ServiceType;
+  table: number | null;
+  zatcaStatus: ZatcaStatus;
+  qr: string | null;
+  icv: number | null;
+  cashier?: string | null;
+  zatcaResponse?: unknown;
+  reportedAt: string | null;
+}
+
+export interface Shift {
+  id: string;
+  staffName: string;
+  openedAt: string;
+  closedAt: string | null;
+  openingCash: number;
+  cashSales: number;
+  cardSales: number;
+  cashRefunds: number;
+  otherRefunds: number;
+  cashIn: number;
+  cashOut: number;
+  orders: number;
+  expectedCash: number;
+  countedCash: number | null;
+  difference: number | null;
+  note: string;
+  moves: { kind: 'in' | 'out'; amount: number; reason: string; at: string }[];
 }
 
 export interface Loyalty {
@@ -154,7 +232,7 @@ export interface Loyalty {
 
 export interface LedgerEntry {
   id: string;
-  kind: 'earn' | 'redeem' | 'free_cup' | 'refund';
+  kind: 'earn' | 'redeem' | 'free_cup' | 'refund' | 'adjust' | 'reverse';
   points: number;
   stamps: number;
   orderNumber: string;
